@@ -1,8 +1,8 @@
 <template>
   <div class="browse-page">
     <div class="browse-header">
-      <h1>Jelajahi</h1>
-      <p>Temukan acara dan kategori yang kamu suka.</p>
+      <h1>Browse & Discover</h1>
+      <p>Find the events and categories that matter most to you.</p>
     </div>
     <div class="browse-content">
       <router-view></router-view>
@@ -11,18 +11,16 @@
 </template>
 
 <style scoped>
-.browse-page {
-  animation: fadeIn 0.4s ease;
-}
+.browse-page { animation: fadeIn 0.4s ease; }
 .browse-header {
-  margin-bottom: 1.8rem;
+  margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 3px solid var(--ink);
+  border-bottom: 1px solid #eee;
 }
-.browse-header h1 {
-  font-size: 2.3rem;
-}
-.browse-header p {
-  color: var(--muted);
+.browse-header h1 { font-size: 2.5rem; color: #1c1948; margin-bottom: 0.5rem; }
+.browse-header p { color: #666; font-size: 1.1rem; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

@@ -5,21 +5,33 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const breadcrumbs = computed(() => {
-  const crumbs = route.matched
+  const matched = route.matched
+  let crumbs = matched
+    .map((m) => {
+      let path = m.path
+      if (path.includes(':')) {
+        path = route.path
+      }
+      return {
+        name: m.name,
+        path: path,
+        meta: m.meta,
+      }
+    })
     .filter((m) => m.meta && m.meta.breadcrumb)
-    .map((m) => ({
-      label: m.meta.breadcrumb,
-      path: m.path.includes(':') ? route.path : m.path || '/',
-    }))
 
-  // Halaman detail: sisipkan "Event List" sebelum crumb terakhir
   if (route.name === 'event-detail') {
-    crumbs.splice(crumbs.length - 1, 0, { label: 'Event List', path: '/browse/events' })
+    crumbs.splice(crumbs.length - 1, 0, {
+      path: '/browse/events',
+      meta: { breadcrumb: 'Event List' },
+    })
   }
 
-  // Pastikan selalu diawali Home
-  if (crumbs.length === 0 || crumbs[0].label !== 'Home') {
-    crumbs.unshift({ label: 'Home', path: '/' })
+  if (crumbs.length === 0 || crumbs[0].meta.breadcrumb !== 'Home') {
+    crumbs.unshift({
+      path: '/',
+      meta: { breadcrumb: 'Home' },
+    })
   }
 
   return crumbs
@@ -27,14 +39,14 @@ const breadcrumbs = computed(() => {
 </script>
 
 <template>
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" v-if="breadcrumbs.length > 0">
     <ul>
       <li v-for="(crumb, index) in breadcrumbs" :key="index">
         <span v-if="index > 0" class="separator">/</span>
         <router-link v-if="index < breadcrumbs.length - 1" :to="crumb.path">
-          {{ crumb.label }}
+          {{ crumb.meta.breadcrumb }}
         </router-link>
-        <span v-else class="active-crumb">{{ crumb.label }}</span>
+        <span v-else class="active-crumb">{{ crumb.meta.breadcrumb }}</span>
       </li>
     </ul>
   </nav>
@@ -42,35 +54,28 @@ const breadcrumbs = computed(() => {
 
 <style scoped>
 .breadcrumb {
-  display: inline-block;
-  margin-bottom: 1.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--card);
-  border: 2px solid var(--ink);
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  box-shadow: 3px 3px 0 var(--ink);
 }
 .breadcrumb ul {
+  list-style: none;
   display: flex;
+  padding: 0;
+  margin: 0;
   align-items: center;
   gap: 0.5rem;
-  list-style: none;
-  flex-wrap: wrap;
 }
 .breadcrumb a {
-  color: var(--ink);
+  text-decoration: none;
+  color: var(--primary, #6644ff);
   font-weight: 500;
 }
-.breadcrumb a:hover {
-  background: var(--yellow);
-}
-.separator {
-  margin-right: 0.5rem;
-  font-weight: 700;
-}
-.active-crumb {
-  font-weight: 700;
-  background: var(--pink);
-  padding: 0 0.4rem;
+.breadcrumb a:hover { text-decoration: underline; }
+.separator { color: #888; margin: 0 0.5rem; }
+.active-crumb { color: #333; font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  .active-crumb { color: #ccc; }
 }
 </style>
