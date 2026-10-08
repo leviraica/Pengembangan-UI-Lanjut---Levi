@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '@/layouts/App.vue'
+import DashboardLayout from '@/layouts/DashboardLayout.vue'
 
 const routes = [
+  // === LAYOUT PUBLIK (dengan Navbar + Breadcrumb) ===
   {
     path: '/',
     component: AppLayout,
@@ -50,6 +52,19 @@ const routes = [
         name: 'contact',
         component: () => import('@/views/Contact.vue'),
         meta: { breadcrumb: 'Contact' },
+      },
+    ],
+  },
+
+  // === LAYOUT DASHBOARD (Rail & Pane, tanpa Navbar publik) ===
+  {
+    path: '/dashboard',
+    component: DashboardLayout,
+    children: [
+      {
+        path: '',
+        name: 'dashboard',
+        component: () => import('@/views/Dashboard.vue'),
       },
     ],
   },
