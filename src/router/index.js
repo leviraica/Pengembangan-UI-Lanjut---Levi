@@ -66,6 +66,12 @@ const routes = [
         name: 'dashboard',
         component: () => import('@/views/Dashboard.vue'),
       },
+      // ⬇️ RUTE BARU MODUL 4: Event Management ⬇️
+      {
+        path: 'events',
+        name: 'dashboard-events',
+        component: () => import('@/views/EventManagement.vue'),
+      },
     ],
   },
 ]
