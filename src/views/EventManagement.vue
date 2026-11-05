@@ -1,64 +1,3 @@
-<script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useEvents } from '@/composables/useEvents';
-import AppModal from '@/components/ui/AppModal.vue';
-import AppButton from '@/components/ui/AppButton.vue';
-import OrganizerEventCard from '@/components/event/OrganizerEventCard.vue';
-import EventCreateForm from '@/components/event/EventCreateForm.vue';
-
-const router = useRouter();
-const {
-  activeEvents,
-  completedEvents,
-  createEvent,
-  completeEvent,
-  deleteEvent
-} = useEvents();
-
-const currentTab = ref('active');
-
-const isModalOpen = ref(false);
-const modalAction = ref('complete');
-const selectedEvent = ref(null);
-
-const handleOpenCompleteModal = (event) => {
-  selectedEvent.value = event;
-  modalAction.value = 'complete';
-  isModalOpen.value = true;
-};
-
-const handleOpenDeleteModal = (event) => {
-  selectedEvent.value = event;
-  modalAction.value = 'delete';
-  isModalOpen.value = true;
-};
-
-const handleConfirmModal = () => {
-  if (selectedEvent.value) {
-    if (modalAction.value === 'complete') {
-      completeEvent(selectedEvent.value.id);
-    } else if (modalAction.value === 'delete') {
-      deleteEvent(selectedEvent.value.id);
-    }
-    isModalOpen.value = false;
-    selectedEvent.value = null;
-  }
-};
-
-const handleCancelModal = () => {
-  isModalOpen.value = false;
-  selectedEvent.value = null;
-};
-
-const handleCreateEvent = (eventData) => {
-  createEvent(eventData);
-  setTimeout(() => {
-    currentTab.value = 'active';
-  }, 1000);
-};
-</script>
-
 <template>
   <div class="event-management-page">
     <div class="page-header">
@@ -66,44 +5,23 @@ const handleCreateEvent = (eventData) => {
         <h2>Event Management Control</h2>
         <p class="subtitle">Manage event lifecycle, publish new events, and archive completed ones.</p>
       </div>
-      <AppButton variant="primary" @click="currentTab = 'create'">
-        ➕ Create New Event
-      </AppButton>
+      <AppButton variant="primary" @click="currentTab = 'create'">➕ Create New Event</AppButton>
     </div>
 
     <div class="tabs-container">
-      <button
-        :class="['tab-btn', { active: currentTab === 'active' }]"
-        @click="currentTab = 'active'"
-      >
-        ⚡ Active Events ({{ activeEvents.length }})
-      </button>
-      <button
-        :class="['tab-btn', { active: currentTab === 'create' }]"
-        @click="currentTab = 'create'"
-      >
-        ➕ Create Event
-      </button>
-      <button
-        :class="['tab-btn', { active: currentTab === 'completed' }]"
-        @click="currentTab = 'completed'"
-      >
-        ✅ Completed Events ({{ completedEvents.length }})
-      </button>
+      <button :class="['tab-btn', { active: currentTab === 'active' }]" @click="currentTab = 'active'">⚡ Active Events ({{ activeEvents.length }})</button>
+      <button :class="['tab-btn', { active: currentTab === 'create' }]" @click="currentTab = 'create'">➕ Create Event</button>
+      <button :class="['tab-btn', { active: currentTab === 'completed' }]" @click="currentTab = 'completed'">✅ Completed Events ({{ completedEvents.length }})</button>
     </div>
 
     <section v-if="currentTab === 'active'" class="tab-pane">
       <div v-if="activeEvents.length > 0" class="events-grid">
         <OrganizerEventCard
-          v-for="item in activeEvents"
-          :key="item.id"
-          :event="item"
+          v-for="item in activeEvents" :key="item.id" :event="item"
           @view-detail="(id) => router.push(`/browse/events/${id}`)"
-          @complete="handleOpenCompleteModal"
-          @delete="handleOpenDeleteModal"
+          @complete="handleOpenCompleteModal" @delete="handleOpenDeleteModal"
         />
       </div>
-
       <div v-else class="empty-state">
         <div class="empty-icon">📭</div>
         <h3>No Active Events</h3>
@@ -113,23 +31,16 @@ const handleCreateEvent = (eventData) => {
     </section>
 
     <section v-if="currentTab === 'create'" class="tab-pane">
-      <EventCreateForm
-        @submit="handleCreateEvent"
-        @cancel="currentTab = 'active'"
-      />
+      <EventCreateForm ref="createFormRef" :submitting="isSubmitting" @submit="handleCreateEvent" @cancel="currentTab = 'active'" />
     </section>
 
     <section v-if="currentTab === 'completed'" class="tab-pane">
       <div v-if="completedEvents.length > 0" class="events-grid">
         <OrganizerEventCard
-          v-for="item in completedEvents"
-          :key="item.id"
-          :event="item"
-          :is-completed="true"
+          v-for="item in completedEvents" :key="item.id" :event="item" :is-completed="true"
           @delete="handleOpenDeleteModal"
         />
       </div>
-
       <div v-else class="empty-state">
         <div class="empty-icon">📁</div>
         <h3>No Completed Events</h3>
@@ -151,12 +62,80 @@ const handleCreateEvent = (eventData) => {
   </div>
 </template>
 
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useEvents } from '@/composables/useEvents';
+import AppModal from '@/components/ui/AppModal.vue';
+import AppButton from '@/components/ui/AppButton.vue';
+import OrganizerEventCard from '@/components/event/OrganizerEventCard.vue';
+import EventCreateForm from '@/components/event/EventCreateForm.vue';
+
+const router = useRouter();
+const { activeEvents, completedEvents, createEvent, completeEvent, deleteEvent, fetchEvents } = useEvents();
+
+const currentTab = ref('active');
+const isModalOpen = ref(false);
+const modalAction = ref('complete');
+const selectedEvent = ref(null);
+const isProcessingAction = ref(false);
+
+const createFormRef = ref(null);
+const isSubmitting = ref(false);
+
+onMounted(() => { fetchEvents(); });
+
+const handleOpenCompleteModal = (event) => {
+  selectedEvent.value = event;
+  modalAction.value = 'complete';
+  isModalOpen.value = true;
+};
+
+const handleOpenDeleteModal = (event) => {
+  selectedEvent.value = event;
+  modalAction.value = 'delete';
+  isModalOpen.value = true;
+};
+
+const handleConfirmModal = async () => {
+  if (selectedEvent.value) {
+    isProcessingAction.value = true;
+    try {
+      if (modalAction.value === 'complete') await completeEvent(selectedEvent.value.id);
+      else if (modalAction.value === 'delete') await deleteEvent(selectedEvent.value.id);
+    } finally {
+      isProcessingAction.value = false;
+      isModalOpen.value = false;
+      selectedEvent.value = null;
+    }
+  }
+};
+
+const handleCancelModal = () => {
+  isModalOpen.value = false;
+  selectedEvent.value = null;
+};
+
+const handleCreateEvent = async (eventData) => {
+  isSubmitting.value = true;
+  try {
+    await createEvent(eventData);
+    if (createFormRef.value) createFormRef.value.resetForm();
+    currentTab.value = 'active';
+  } catch (err) {
+    alert(err.message || 'Gagal menyimpan acara ke server REST API');
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+</script>
+
 <style scoped>
 .event-management-page { max-width: 1200px; margin: 0 auto; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-8); flex-wrap: wrap; gap: var(--space-4); }
 .page-header h2 { font-size: 2rem; color: var(--text-main); margin-bottom: var(--space-1); }
 .subtitle { color: var(--text-muted); font-size: 1rem; }
-.tabs-container { display: flex; gap: var(--space-3); border-bottom: 2px solid var(--border-color); margin-bottom: var(--space-8); padding-bottom: var(--space-2); flex-wrap: wrap; }
+.tabs-container { display: flex; gap: var(--space-3); border-bottom: 2px solid var(--border-color); margin-bottom: var(--space-8); padding-bottom: var(--space-2); }
 .tab-btn { background: none; border: none; padding: var(--space-3) var(--space-6); font-size: 1.05rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; }
 .tab-btn:hover { background-color: rgba(102, 68, 255, 0.05); color: var(--primary); }
 .tab-btn.active { background-color: var(--primary); color: white; }
@@ -165,7 +144,5 @@ const handleCreateEvent = (eventData) => {
 .empty-icon { font-size: 3rem; margin-bottom: var(--space-3); }
 .empty-state h3 { font-size: 1.4rem; margin-bottom: var(--space-2); }
 .empty-state p { color: var(--text-muted); margin-bottom: var(--space-6); }
-@media (max-width: 768px) {
-  .page-header { flex-direction: column; align-items: flex-start; }
-}
+@media (max-width: 768px) { .page-header { flex-direction: column; align-items: flex-start; } }
 </style>
